@@ -1,0 +1,1707 @@
+FORMAT: 1A
+HOST: http://polls.apiblueprint.org/
+
+# Polls API
+
+Polls is a simple API allowing consumers to view polls and vote in them. TEST
+
+3. In the result you get back a 6 digit number (paymenttokennumber) with which you can call
+our QR code generation service, that returns an image which you embed into the form that you display to the customer.<br>
+QR code service is available on:<br>
+    * Production environment <br>
+        * PNG: [https://qr.mbills.si/qrPng/<valid paymenttokennumber&gt;](https://qr.mbills.si/qrPng/123456)<br>
+        * SVG: [https://qr.mbills.si/qr/<valid paymenttokennumber&gt;](https://qr.mbills.si/qr/123456)<br>
+    * Test environment <br>
+        * PNG: [https://demo3.halcom.com/qrPng/<valid paymenttokennumber&gt;](https://demo3.halcom.com/qrPng/123456)<br>
+        * SVG: [https://demo3.halcom.com/qr/<valid paymenttokennumber&gt;](https://demo3.halcom.com/qr/123456)<br>
+
+
+```
+<a href="mbills://www.mbills.si/dl/?type=2&qritemid=123456">
+<img src="https://qr.mbills.si/qr/123456">
+</a>
+```
+
+## Questions Collection [/questions]
+
+### List All Questions [GET]
+
++ Response 200 (application/json)
+
+        [
+            {
+                "question": "Favourite programming language?",
+                "published_at": "2015-08-05T08:40:51.620Z",
+                "choices": [
+                    {
+                        "choice": "Swift",
+                        "votes": 2048
+                    }, {
+                        "choice": "Python",
+                        "votes": 1024
+                    }, {
+                        "choice": "Objective-C",
+                        "votes": 512
+                    }, {
+                        "choice": "Ruby",
+                        "votes": 256
+                    }
+                ]
+            }
+        ]
+
+### Create a New Question [POST]
+
+You may create your own question using this action. It takes a JSON
+object containing a question and a collection of answers in the
+form of choices.
+
++ Request (application/json)
+
+        {
+            "question": "Favourite programming language?",
+            "choices": [
+                "Swift",
+                "Python",
+                "Objective-C",
+                "Ruby"
+            ]
+        }
+
++ Response 201 (application/json)
+
+    + Headers
+
+            Location: /questions/2
+
+    + Body
+
+            {
+                "question": "Favourite programming language?",
+                "published_at": "2015-08-05T08:40:51.620Z",
+                "choices": [
+                    {
+                        "choice": "Swift",
+                        "votes": 0
+                    }, {
+                        "choice": "Python",
+                        "votes": 0
+                    }, {
+                        "choice": "Objective-C",
+                        "votes": 0
+                    }, {
+                        "choice": "Ruby",
+                        "votes": 0
+                    }
+                ]
+            }
+            
+            
+
+FORMAT: X-1A
+HOST: http://qr.mbills.si/
+
+# Hal mBills payment QR code management
+
+***Version 1.0 (2016-06-15)***
+
+Hal mBills payment QR code management API/portal allows a merchant to generate and manage QR codes
+for payment of products and services using Hal mBills mobile payment solution.
+
+Generated QR codes can be published on web portals, in advertisement banners, on billboards or posters
+and Hal mBills users can pay the advertised product or service simply by scanning the QR code in Hal
+mBills application and confirming the payment.
+
+
+## QR code payment overview
+
+Typical payment QR code generation and use (payment) process is as follows:
+
+<ol>
+    <li> Merchant uses Hal mBills payment QR code management portal or API to generate a
+        payment QR code for a given product or service. 
+    <li> Merchant publishes the QR code on a billboard or an advertisement banner,
+        inviting users to pay for the product or service using Hal mBills
+        application.
+    <li> Hal mBills user scans the QR code in Hal mBills application, selects the
+        quantity for ordered product or service and confirms the payment.
+    <li> Hal mBills engine sends new product/service order notification to the
+        merchant after the payment is complete.
+</ol>
+
+![mbills qr overview](http://s32.postimg.org/lqytu307p/mbills_qr_overview.png)
+
+
+## QR code management
+
+### QR code management portal (QR-Admin)
+<a name="anchor_qr_portal"></a>
+
+Hal mBills payment QR code management portal allows the merchant to interactively generate and
+manage QR codes for payment of products and services.
+
+<!-- Merchant uses digital certificate to access the payment QR code management portal. -->
+
+Merchant uses username and password to access the payment QR code management portal. Once logged in, the merchant can generate new payment QR codes or manage
+existing QR codes.
+
+QR management portal URL, username and password are provided to the merchant upon registration 
+in the mbills system.
+
+![mbills qr management portal](https://s31.postimg.org/izw6rvbjv/Screenshot_from_2016_06_15_13_10_23.png)
+
+
+### QR code management API (QR-API)
+<a name="anchor_qr_mgmt_api"></a>
+
+Hal mBills payment QR code management API allows the merchant to programmatically generate and
+manage QR codes for payment of products and services.
+
+Payment QR code management API will be available in one of the future releases of the Hal mBills
+payment QR code module.
+
+There should be two authentication options:
+* Base64 encoded security token, which is sent in the "Authorization" header
+* Using HTTP Basic Authentication headers in the following way:
+    * username: apikey.nonce.timestamp
+    * password: hash(username + secretkey + request URL)
+    
+    \* apikey and secretkey are generated on registration
+    
+
+At the moment, only the first option is implemented.
+
+
+## QR code data structures
+
+
+### QR code attributes
+<a name="anchor_qr_data"></a>
+
+Each payment QR code is associated with attributes that govern the use of the payment QR code and
+provide additional operational data that is sent back to the merchant upon each successful payment
+of the code.
+
+The following table lists the attributes of a payment QR code in the system.
+
+Mandatory attributes are marked with the value 'M' in the column _M_; optional attributes are marked
+with the value 'O'.
+
+Attributes which can be configured by the merchant in the portal/API are marked with the value 'Y'
+in the column _C_; internal attributes are marked with '-'.
+
+<table>
+<thead>
+<tr>
+    <th>Attribute</th>
+    <th>Type</th>
+    <th>Description</th>
+    <th>M</th>
+    <th>C</th>
+</tr>
+</thead>
+<tbody>
+
+<tr>
+    <td>codeId</td>
+    <td>long</td>
+    <td>Unique QR code identifier in Hal mBills</td>
+    <td>M</td>
+    <td>-</td>
+</tr>
+
+<tr>
+    <td>merchantId</td>
+    <td>long</td>
+    <td>Unique merchant identifier in Hal mBills</td>
+    <td>M</td>
+    <td>-</td>
+</tr>
+
+
+<tr>
+    <td>status</td>
+    <td>string</td>
+    <td>Offer status (pending, available, expired)</td>
+    <td>M</td>
+    <td>Y</td>
+</tr>
+
+<tr>
+    <td>type</td>
+    <td>string</td>
+    <td>Offer type</td>
+    <td>M</td>
+    <td>-</td>
+</tr>
+
+<tr>
+    <td>price</td>
+    <td>decimal</td>
+    <td>Price of a single item in EUR</td>
+    <td>M</td>
+    <td>Y</td>
+</tr>
+
+<tr>
+    <td>stock</td>
+    <td>int</td>
+    <td>Total number of items available for purchase (number of items on stock)</td>
+    <td>O</td>
+    <td>Y</td>
+</tr>
+
+<tr>
+    <td>itemId</td>
+    <td>string</td>
+    <td>Item (product/service) identifier in merchant's system</td>
+    <td>M</td>
+    <td>Y</td>
+</tr>
+
+<tr>
+    <td>attributes</td>
+    <td>object</td>
+    <td>Email, phone</td>
+    <td>O</td>
+    <td>Y</td>
+</tr>
+
+<tr>
+    <td>attributes &rarr; customAttrs</td>
+    <td>array</td>
+    <td>Arbitrary QR code attributes provided by the merchant. Custom attributes can be added by the merchant in the business portal. These attributes represent information that must be collected by the user before the item is purchased. The custom attributes will be shown as mandatory input fields in the mobile application when a user attempts to purchase the pariticular item.  </td>
+    <td>O</td>
+    <td>Y</td>
+</tr>
+
+<tr>
+    <td>orderNotifications</td>
+    <td>array</td>
+    <td>Purchase notifications configuration for the merchant</td>
+    <td>M</td>
+    <td>Y</td>
+</tr>
+
+<tr>
+    <td>orderNotifications &rarr; type</td>
+    <td>string</td>
+    <td>Notification transport channel (SMS, e-mail, HTTPS POST)</td>
+    <td>M</td>
+    <td>Y</td>
+</tr>
+
+<tr>
+    <td>orderNotifications &rarr; address</td>
+    <td>string</td>
+    <td>Notification destination address (phone number, e-mail)</td>
+    <td>M</td>
+    <td>Y</td>
+</tr>
+
+<tr>
+    <td>name</td>
+    <td>string</td>
+    <td>Product or service name</td>
+    <td>M</td>
+    <td>Y</td>
+</tr>
+
+<tr>
+    <td>link</td>
+    <td>URL</td>
+    <td>Product or service description URL</td>
+    <td>O</td>
+    <td>Y</td>
+</tr>
+
+<tr>
+    <td>shortDescription</td>
+    <td>string</td>
+    <td>Short product or service description</td>
+    <td>M</td>
+    <td>Y</td>
+</tr>
+
+<tr>
+    <td>longDescription</td>
+    <td>string</td>
+    <td>Long product or service description</td>
+    <td>M</td>
+    <td>Y</td>
+</tr>
+
+<tr>
+    <td>imageUrl</td>
+    <td>URL</td>
+    <td>Product or service image URL</td>
+    <td>O</td>
+    <td>Y</td>
+</tr>
+
+<tr>
+    <td>quantity</td>
+    <td>int</td>
+    <td>Default number of items to be purchased when the QR code is canned (user can change the quantity)</td>
+    <td>O</td>
+    <td>Y</td>
+</tr>
+
+<tr>
+    <td>useCart</td>
+    <td>boolean</td>
+    <td>Allow additional items to be purchased with this item (enables shopping cart functionality of Hal mBills)</td>
+    <td>O</td>
+    <td>Y</td>
+</tr>
+
+<tr>
+    <td>delivery</td>
+    <td>boolean</td>
+    <td>Enables delivery for product</td>
+    <td>O</td>
+    <td>Y</td>
+</tr>
+
+<tr>
+    <td>creationTime</td>
+    <td>timestamp</td>
+    <td>Offer (QR code) creation time</td>
+    <td>M</td>
+    <td>-</td>
+</tr>
+
+<tr>
+    <td>modifiedTime</td>
+    <td>timestamp</td>
+    <td>Last offer (QR code) modification time</td>
+    <td>M</td>
+    <td>-</td>
+</tr>
+
+<tr>
+    <td>expirationTime</td>
+    <td>timestamp</td>
+    <td>Offer (QR code) expiration time</td>
+    <td>O</td>
+    <td>Y</td>
+</tr>
+
+
+</tbody>
+</table>
+
+
+Example QR code data structure in JSON:
+
+```javascript
+
+    {
+        "id":650327,
+        "type":"1",
+        "clientId":"1148405574330228376",
+        "data": {
+            "header": {
+                "codeId":650327,
+                "merchantId":"1148405574330228376",
+                "status":"ACTIVE",
+                "type":"1",
+                "price":59.12,
+                "currency":"EUR",
+                "stock":100,
+                "itemId":"ALICE-COOPER-1",
+                "expirationTime":"2017-04-24T16:30:53+02:00"
+            },
+            "attributes": 
+            {
+                "email":false,
+                "phone":false,
+                "customAttrs":[]
+            },
+            "orderNotifications": [
+            {
+                "type": "SMS",
+                "address": "+38631308177"
+            },
+            {
+                "type": "EMAIL",
+                "address": "mailto:orders@merchant.com"
+            }],
+            "name":"Alice Cooper",
+            "link":"http://www.merchant.com/cooper/details",
+            "shortDescription":"NED 12. jun 2016, Hala Tivoli",
+            "longDescription":"Buy tickets for an upcoming Alice Cooper concert near you",
+            "imageUrl":"hhttp://www.merchant.com/cooper/image",
+            "quantity":1,
+            "useCart":false,
+            "delivery":false,
+            "creationTime":"2017-01-24T16:31:37+01:00",
+            "modifiedTime":"2017-01-24T16:31:38+01:00"
+        },
+        "status":1,
+        "stock":100,
+        "expirationTime":1493044253000
+    }
+
+
+```
+
+Example QR code data structure in XML:
+
+```xml
+<qrCodeData>
+    <id>650327</id>
+    <type>1</type>
+    <clientId>1148405574330228376</clientId>
+    <data>
+        <header>
+            <codeId>650327</codeId>
+            <merchantId>1148405574330228376</merchantId>
+            <status>ACTIVE</status>
+            <type>1</type>
+            <price>59.12</price>
+            <currency>EUR</currency>
+            <stock>100</stock>
+            <itemId>ALICE-COOPER-1</itemId>
+            <expirationTime>2017-04-24T16:30:53+02:00</expirationTime>
+        </header>
+        <attributes>
+            <email>false</email>
+            <phone>false</phone>
+        </attributes>
+        <orderNotifications>
+            <type>SMS</type>
+            <address>+38631308177</address>
+        </orderNotifications>
+        <orderNotifications>
+            <type>EMAIL</type>
+            <address>mailto:orders@merchant.com</address>
+        </orderNotifications>
+        <name>Alice Cooper</name>
+        <link>http://www.merchant.com/cooper/details</link>
+        <shortDescription>NED 12. jun 2016, Hala Tivoli</shortDescription>
+        <longDescription>Buy tickets for an upcoming Alice Cooper concert near you</longDescription>
+        <imageUrl>hhttp://www.merchant.com/cooper/image</imageUrl>
+        <quantity>1</quantity>
+        <useCart>false</useCart>
+        <delivery>false</delivery>
+        <creationTime>2017-01-24T16:31:37+01:00</creationTime>
+        <modifiedTime>2017-01-24T16:31:38+01:00</modifiedTime>
+    </data>
+    <status>1</status>
+    <stock>100</stock>
+    <expirationTime>1493044253000</expirationTime>
+</qrCodeData>
+```
+
+
+### QR code statuses
+
+The following QR code statuses are currently supported:
+
+<table>
+<thead>
+<tr>
+    <th>Status code</th>
+    <th>Status</th>
+    <th>Description</th>
+</tr>
+</thead>
+<tbody>
+
+<tr>
+    <td align=center>-1</td>
+    <td>ERROR</td>
+    <td>Something is wrong with the offer (QR code) and cannot be used for payment.</td>
+</tr>
+
+
+<tr>
+    <td align=center>0</td>
+    <td>PENDING</td>
+    <td>Offer (QR code) is pending approval and is not active yet.</td>
+</tr>
+
+<tr>
+    <td align=center>1</td>
+    <td>ACTIVE</td>
+    <td>Offer (QR code) is currently active and can be used for payment.</td>
+</tr>
+
+<tr>
+    <td align=center>2</td>
+    <td>BLOCKED</td>
+    <td>Offer (QR code) is temporarily blocked.</td>
+</tr>
+
+<tr>
+    <td align=center>3</td>
+    <td>CANCELLED</td>
+    <td>Offer (QR code) is permanently deleted.</td>
+</tr>
+
+<tr>
+    <td align=center>4</td>
+    <td>EXPIRED</td>
+    <td>Offer (QR code) has expired and cannot be used for payment.</td>
+</tr>
+
+</tbody>
+</table>
+
+
+### QR code types
+
+The following QR code types are currently supported:
+
+<table>
+<thead>
+<tr>
+    <th>Type code</th>
+    <th>Type</th>
+    <th>Description</th>
+</tr>
+</thead>
+<tbody>
+
+<tr>
+    <td align=center>1</td> 
+    <td>DEFAULT</td>
+    <td>Default QR code type</td>
+</tr>
+
+</tbody>
+</table>
+
+
+## Purchase notifications
+
+Hal mBills will post a notification to merchant for every successfully completed payment of the merchant's
+QR code.
+
+Merchants can configure multiple notification types and destination addresses for receiving
+purchase (order) notifications in <code>notifications</code> array of the QR code attributes.
+
+
+### Notification types 
+Currently supported notification types are:
+
+<table>
+<thead>
+<tr>
+    <th>Type</th>
+    <th>Description</th>
+    <th>Destination address</th>
+</tr>
+</thead>
+<tbody>
+</tbody>
+<tr>
+    <td>SMS</td>
+    <td>Merchant will receive SMS message for each successfully completed purchase</td>
+    <td>Destination phone number in <code>tel:</code> URL format
+        <br/>Example: tel:+38631308177</td>
+</tr>
+<tr>
+    <td>EMAIL</td>
+    <td>Merchant will receive an e-mail for each successfully completed purchase</td>
+    <td>Destination e-mail address in <code>mailto:</code> URL format
+        <br/>Example: mailto:orders@merchant.com</td>
+</tr>
+<tr>
+    <td>JSON_POST</td>
+    <td>Purchase (order) details will be published to the merchant's server in a form of a HTTPS POST
+        request with JSON payload</td>
+    <td>Destination HTTPS POST request URL
+        <br/>Example: https://www.merchant.com/orderJson.do</td>
+</tr>
+<tr>
+    <td>XML_POST</td>
+    <td>Purchase (order) details will be published to the merchant's server in a form of a HTTPS POST
+        request with XML payload</td>
+    <td>Destination HTTPS POST request URL
+        <br/>Example: https://www.merchant.com/orderXml.do</td>
+</tr>
+</table>
+
+
+### Notification data
+
+Merchant can opt for receiving HTTPS POST notifications for each successful payment of the merchant's QR
+code. Hal mBills will publish purchase (order) details to the configured merchant's URL address in either
+XML or JSON format.
+
+When using HTTPS POST notifications, Hal mBills will authenticate to the merchant with Hal mBills
+client SSL certificate in order to prevent notifications from being sent by unathorized parties.
+
+The following purchase (order) data will be included in the HTTPS POST request:
+
+<table>
+<thead>
+<tr>
+    <th>Attribute</th>
+    <th>Type</th>
+    <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+    <td>transactionId</td>
+    <td>string</td>
+    <td>Unique transaction identifier in Hal mBills system</td>
+</tr>
+<tr>
+    <td>qrCodeData</td>
+    <td>object</td>
+    <td>QR code data for the payment</td>
+</tr>
+<tr>
+    <td>deliveryAddress</td>
+    <td>object</td>
+    <td>Item delivery address details</td>
+</tr>
+<tr>
+    <td>deliveryAddress &rarr; name</td>
+    <td>string</td>
+    <td>Recipient name</td>
+</tr>
+<tr>
+    <td>deliveryAddress &rarr; streetAddress</td>
+    <td>string</td>
+    <td>Recipient street address (street & house number)</td>
+</tr>
+<tr>
+    <td>deliveryAddress &rarr; postcode</td>
+    <td>string</td>
+    <td>Recipient postal code</td>
+</tr>
+<tr>
+    <td>deliveryAddress &rarr; city</td>
+    <td>string</td>
+    <td>Recipient town/city</td>
+</tr>
+<tr>
+    <td>deliveryAddress &rarr; country</td>
+    <td>string</td>
+    <td>Recipient country</td>
+</tr>
+<tr>
+    <td>email</td>
+    <td>string</td>
+    <td>Optional contact e-mail address</td>
+</tr>
+<tr>
+    <td>phone</td>
+    <td>string</td>
+    <td>Optional contact phone number</td>
+</tr>
+<tr>
+    <td>notes</td>
+    <td>string</td>
+    <td>Optional purchase notes</td>
+</tr>
+<tr>
+    <td></td>
+    <td></td>
+    <td></td>
+</tr>
+</tbody>
+</table>
+
+Example purchase (order) JSON payload:
+
+```javascript
+{
+    "transactionId": 1234567890123456,
+    "qrCodeData": {
+        "codeId": 1234567890123456,
+        "merchantId": 6543210987654321,
+        "itemId": "ALICE-COOPER-1",
+        ...
+    },
+    "deliveryAddress": {
+        "name": "Andrej Komelj",
+        "streetAddress": "Pod topoli 17",
+        "postcode": "1000",
+        "city": "Ljubljana"
+    },
+    "email": "akomelj@gmail.com",
+    "phone": "031/308-177",
+    "notes": "Please deliver ASAP!"
+}
+```
+
+Example purchase (order) XML payload:
+```xml
+<purchaseData>
+    <transactionId>1234567890123456</transactionId>
+    <qrCodeData>
+        <codeId>1234567890123456</codeId>
+        <merchantId>6543210987654321</merchantId>
+        <itemId>ALICE-COOPER-1</itemId>
+        ...
+    </qrCodeData>
+    <deliveryAddress>
+        <name>Andrej Komelj</name>
+        <streetAddress>Pod topoli 17</streetAddress>
+        <postcode>1000</postcode>
+        <city>Ljubljana</city>
+    </deliveryAddress>
+    <email>akomelj@gmail.com</email>
+    <phone>031/308-177</phone>
+    <notes>Please deliver ASAP!</notes>
+</purchaseData>
+```
+
+
+### Notification authentication
+
+When using HTTPS POST notifications, Hal mBills system will authenticate to the merchant using Hal mBills
+system SSL/TLS client certificate. Mutual SSL/TLS authentication is required in order to prevent notification
+spoofing by unathorized parties.
+
+Notification authentication mechanisms for other types of notifications (e-mail, SMS) are to be discussed
+with each particular merchant.
+
+
+## API versioning
+<a name="anchor_apiversioning"></a>
+
+The API will use version prefixes in the URL path. 
+* https://api.domain.name/v1/
+
+All changes that are not backwards compatible will require a new version prefix.
+
+
+## API keys and security
+<a name="anchor_apisecurity"></a>
+
+### How you authenticate to our server
+
+Please refer to document published on http://docs.mbills.apiary.io/#introduction/api-keys-and-security/how-you-authenticate-to-our-server.
+### How you can verify our responses / webhooks
+
+Please refer to document published on http://docs.mbills.apiary.io/#introduction/api-keys-and-security/how-you-can-verify-our-responses-/-webhooks.
+
+
+
+
+## Create QR item [/API/v1/qr/add]
+
+### Create QR item [POST]
+
+POST  method. URI: /API/v1/qr/add <br/>
+
+Use this endpoint to create a new QR item in Hal mbills system. 
+
+#### Request
+
+Sample data for basic authentication:
+* Shared secret: mysecretkey
+* Username: 79f68986-6f6b-40a0-98b6-417d302dec85.21312312.1462271771 
+* Password: fc33f89f1bafce02d974527935c6d740747c6ddb422371befafe98bbf18c0d26
+
+<table>
+<thead>
+<tr>
+    <th>Parameter</th>
+    <th>Description</th>
+    <th>Sample</th>
+</tr>
+</thead>
+<tbody>
+
+<tr>
+    <td><b>status</b><i><br>String<br>Mandatory</i></td>
+    <td>Offer status (pending, available, expired)</td>
+    <td>0</td>
+</tr>
+
+<tr>
+    <td><b>type</b><i><br>String<br>Mandatory</i></td>
+    <td>Offer type</td>
+    <td>1</td>
+</tr>
+
+<tr>
+    <td><b>price</b><i><br>Decimal<br>Mandatory</i></td>
+    <td>Price of a single item. ??? number of decimals</td>
+    <td>1.00</td>
+</tr>
+
+<tr>
+    <td><b>currency</b><i><br>???<br>Mandatory</i></td>
+    <td></td>
+    <td>EUR</td>
+</tr>
+
+<tr>
+    <td><b>stock</b><i><br>Int<br>Optional???</i></td>
+    <td>Total number of items available for purchase (number of items on stock)</td>
+    <td>500</td>
+</tr>
+
+<tr>
+    <td><b>itemId</b><i><br>String<br>Mandatory</i></td>
+    <td>Item (product/service) identifier in merchant's system. Will not be displayed to user.</td>
+    <td>APPLE001</td>
+</tr>
+
+<tr>
+    <td><b>expirationTime</b><i><br>Timestamp<br>Optional ???</i></td>
+    <td>Offer (QR code) expiration time.</td>
+    <td>2017-12-19T10:55:28+01:00</td>
+</tr>
+
+<tr>
+    <td><b>attributes</b><i><br>Object<br>Optional</i></td>
+    <td></td>
+    <td></td>
+</tr>
+
+<tr>
+    <td>attributes &rarr; <b>email</b><i><br>String ???<br>Optional</i></td>
+    <td>If set to true, user will be required to enter his/her email address. 
+    This information will be sent to merchant in purchase notification.</td>
+    <td>true</td>
+</tr>
+
+<tr>
+    <td>attributes &rarr; <b>phone</b><i><br>String ???<br>Optional</i></td>
+    <td>If set to true, user will be required to enter his/her phone number. 
+    This information will be sent to merchant in purchase notification.</td>
+    <td>true</td>
+</tr>
+
+
+<tr>
+    <td>attributes &rarr; <b>customAttrs</b><i><br>Array<br>Optional</i></td>
+    <td>Arbitrary QR code attributes provided by the merchant.  These attributes represent 
+    information that must be collected by the user before the item is purchased. 
+    The custom attributes will be shown as mandatory input fields in the mobile application 
+    when a user attempts to purchase the pariticular item. This 
+    information will be sent to merchant in purchase notification. MAX number of attributes ???</td>
+    <td>["Apple type", "Color"]</td>
+</tr>
+
+<tr>
+    <td><b>orderNotifications</b><i><br>Array<br>Mandatory</i></td>
+    <td>Purchase notifications configuration for the merchant. At least one purchase notification 
+    channel must be set.</td>
+    <td></td>
+</tr>
+
+<tr>
+    <td>orderNotifications &rarr; <b>type</b><i><br>String<br>Mandatory</i></td>
+    <td>Notification transport channel (SMS, EMAIL, HTTPS POST).</td>
+    <td>EMAIL</td>
+</tr>
+
+<tr>
+    <td>orderNotifications &rarr; <b>address</b><i><br>String<br>Mandatory</i></td>
+    <td>Notification destination address (phone number, e-mail).</td>
+    <td>order@apples.si</td>
+</tr>
+
+<tr>
+    <td><b>name</b><i><br>String<br>Mandatory</i></td>
+    <td>Product or service name. This data will be displayed to user after scanning QR code.</td>
+    <td>Apple</td>
+</tr>
+
+<tr>
+    <td><b>link</b><i><br>URL<br>Optional</i></td>
+    <td>Product or service description URL.</td>
+    <td>www.apples.si</td>
+</tr>
+
+<tr>
+    <td><b>shortDescription</b><i><br>String<br>Mandatory ???</i></td>
+    <td>Short product or service description. Will be displayed to user after scanning QR code. </td>
+    <td>Our apples</td>
+</tr>
+
+<tr>
+    <td><b>longDescription</b><i><br>String<br>Mandatory</i></td>
+    <td>Long product or service description. Will be displayed to user after scanning QR code.</td>
+    <td>Our delicious apples</td>
+</tr>
+
+<tr>
+    <td><b>imageUrl</b><i><br>URL<br>Optional</i></td>
+    <td>Product or service image URL. ??? (is here any limits in what format must the img be and 
+    how the url must be written ???</td>
+    <td>www.apples.si/apple.png</td>
+</tr>
+
+<tr>
+    <td><b>quantity</b><i><br>Int<br>Optional</i></td>
+    <td>Default number of items to be purchased when the QR code is scanned (user can change the quantity). To disable option for user to change 
+    number of items purchased at once, use 0.</td>
+    <td>10</td>
+</tr>
+
+<tr>
+    <td><b>useCart</b><i><br>Boolean<br>Optional</i></td>
+    <td>Allow additional items to be purchased with this item (enables shopping cart functionality of Hal mBills). NOTE: this functionality
+    is currently not supported ???</td>
+    <td>false</td>
+</tr>
+
+<tr>
+    <td><b>delivery</b><i><br>Boolean<br>Optional</i></td>
+    <td>User is required to enter delivery data (first name, last name, address, zip code, city). This information is returned to merchant in purchase notification 
+    Use this for products that need to be physically delivered to user.</td>
+    <td>true</td>
+</tr>
+
+</tbody>
+</table>
+
+#### Response
+Response is an array of objects in json format. 
+
+<!--
+<table>
+<thead>
+<tr>
+    <th>Parameter</th>
+    <th>Description</th>
+    <th>Sample</th>
+</tr>
+</thead>
+<tbody>
+
+<tr>
+    <td><b>codeId</b><i><br>???</i></td>
+    <td></td>
+    <td>445395</td>
+</tr>
+
+<tr>
+    <td><b>merchantId</b><i><br>???</i></td>
+    <td></td>
+    <td>1148405574330228376</td>
+</tr>
+
+<tr>
+    <td><b>status</b><i><br>String</i></td>
+    <td>Offer status (pending, available, expired)</td>
+    <td>0</td>
+</tr>
+
+<tr>
+    <td><b>type</b><i><br>String</i></td>
+    <td>Offer type</td>
+    <td>1</td>
+</tr>
+
+<tr>
+    <td><b>price</b><i><br>Decimal</i></td>
+    <td>Price of a single item. ??? number of decimals</td>
+    <td>1.00</td>
+</tr>
+
+<tr>
+    <td><b>currency</b><i><br>???</i></td>
+    <td></td>
+    <td>EUR</td>
+</tr>
+
+<tr>
+    <td><b>stock</b><i><br>Int</i></td>
+    <td>Total number of items available for purchase (number of items on stock)</td>
+    <td>500</td>
+</tr>
+
+<tr>
+    <td><b>itemId</b><i><br>String</i></td>
+    <td>Item (product/service) identifier in merchant's system. Will not be displayed to user.</td>
+    <td>APPLE001</td>
+</tr>
+
+<tr>
+    <td><b>expirationTime</b><i><br>Timestamp</i></td>
+    <td>Offer (QR code) expiration time.</td>
+    <td>2017-12-19T10:55:28+01:00</td>
+</tr>
+
+<tr>
+    <td><b>attributes</b><i><br>Object</i></td>
+    <td></td>
+    <td></td>
+</tr>
+
+<tr>
+    <td>attributes &rarr; <b>email</b><i><br>String ???</i></td>
+    <td>If set to true, user will be required to enter his/her email address. 
+    This information will be sent to merchant in purchase notification.</td>
+    <td>true</td>
+</tr>
+
+<tr>
+    <td>attributes &rarr; <b>phone</b><i><br>String ???</i></td>
+    <td>If set to true, user will be required to enter his/her phone number. 
+    This information will be sent to merchant in purchase notification.</td>
+    <td>true</td>
+</tr>
+
+
+<tr>
+    <td>attributes &rarr; <b>customAttrs</b><i><br>Array/i></td>
+    <td>Arbitrary QR code attributes provided by the merchant.  These attributes represent 
+    information that must be collected by the user before the item is purchased. 
+    The custom attributes will be shown as mandatory input fields in the mobile application 
+    when a user attempts to purchase the pariticular item. This 
+    information will be sent to merchant in purchase notification. MAX number of attributes ???</td>
+    <td>["Apple type", "Color"]</td>
+</tr>
+
+<tr>
+    <td><b>orderNotifications</b><i><br>Array</i></td>
+    <td>Purchase notifications configuration for the merchant. At least one purchase notification 
+    channel must be set.</td>
+    <td></td>
+</tr>
+
+<tr>
+    <td>orderNotifications &rarr; <b>type</b><i><br>String</i></td>
+    <td>Notification transport channel (SMS, EMAIL, HTTPS POST).</td>
+    <td>EMAIL</td>
+</tr>
+
+<tr>
+    <td>orderNotifications &rarr; <b>address</b><i><br>String</i></td>
+    <td>Notification destination address (phone number, e-mail).</td>
+    <td>order@apples.si</td>
+</tr>
+
+<tr>
+    <td><b>name</b><i><br>String</i></td>
+    <td>Product or service name. This data will be displayed to user after scanning QR code.</td>
+    <td>Apple</td>
+</tr>
+
+<tr>
+    <td><b>link</b><i><br>URL</i></td>
+    <td>Product or service description URL.</td>
+    <td>www.apples.si</td>
+</tr>
+
+<tr>
+    <td><b>shortDescription</b><i><br>String</i></td>
+    <td>Short product or service description. Will be displayed to user after scanning QR code. </td>
+    <td>Our apples</td>
+</tr>
+
+<tr>
+    <td><b>longDescription</b><i><br>String</i></td>
+    <td>Long product or service description. Will be displayed to user after scanning QR code.</td>
+    <td>Our delicious apples</td>
+</tr>
+
+<tr>
+    <td><b>imageUrl</b><i><br>URL</i></td>
+    <td>Product or service image URL. ??? (is here any limits in what format must the img be and 
+    how the url must be written ???</td>
+    <td>www.apples.si/apple.png</td>
+</tr>
+
+<tr>
+    <td><b>quantity</b><i><br>Int</i></td>
+    <td>Default number of items to be purchased when the QR code is scanned (user can change the quantity). To disable option for user to change 
+    number of items purchased at once, use 0.</td>
+    <td>10</td>
+</tr>
+
+<tr>
+    <td><b>useCart</b><i><br>Boolean</i></td>
+    <td>Allow additional items to be purchased with this item (enables shopping cart functionality of Hal mBills). NOTE: this functionality
+    is currently not supported ???</td>
+    <td>false</td>
+</tr>
+
+<tr>
+    <td><b>delivery</b><i><br>Boolean</i></td>
+    <td>User is required to enter delivery data (first name, last name, address, zip code, city). This information is returned to merchant in purchase notification 
+    Use this for products that need to be physically delivered to user.</td>
+    <td>true</td>
+</tr>
+
+<tr>
+    <td><b>creationTime</b><i><br></i></td>
+    <td></td>
+    <td></td>
+</tr>
+
+<tr>
+    <td><b>modifiedTime</b><i><br></i></td>
+    <td></td>
+    <td></td>
+</tr>
+
+</tbody>
+</table>
+-->
+
+
++ Request (application/json)
+
+    + Headers
+        
+            Authorization: Basic NzlmNjg5ODYtNmY2Yi00MGEwLTk4YjYtNDE3ZDMwMmRlYzg1LjIxMzEyMzEyLjE0NjIyNzE3NzE6ZmMzM2Y4OWYxYmFmY2UwMmQ5NzQ1Mjc5MzVjNmQ3NDA3NDdjNmRkYjQyMjM3MWJlZmFmZTk4YmJmMThjMGQyNg==
+
+    + Attributes
+        + id: 445395 (number, required) - The unique identifier for a product
+        + clientId: 1148405574330228376 (string, required)
+        + data (object, required)
+            + header  (object, required)
+                + codeId: 445395 (number, required)              
+                + merchantId: 1148405574330228376 (string, required)
+                + status: 0 (number, required)
+                + price: 1.00 (string, required)
+                + stock: 500 (number, required)
+                + itemId: Apple (string, required)
+                + expirationTime: `2017-12-19T10:55:28+01:00` (string, required)
+            + attributes (required, object)
+                + email: true (boolean, required)  
+                + phone: true (boolean, required)  
+                + customAttrs (array, required)
+                    + (object)
+            + orderNotifications (array, required)
+                + (object)
+            + name: Apple (string, required)
+            + link: '' (string, required)
+            + shortDescription: Apple short (string, required)
+            + longDescription: Apple long (string, required)
+            + imageUrl: `http://pngimg.com/upload_small/apple/apple_PNG12458.png` (string, required)
+            + quantity: 10 (number, required)
+            + delivery: false (boolean, required)  
+            + creationTime: `2017-03-07T11:00:15+01:00` (string, required)
+            + modifiedTime: `2017-03-07T11:00:15+01:00` (string, required)
+       + expirationTime: `2017-12-19T10:55:28+01:00` (string, required)
+       + status: 0 (number, required)
+       + stock: 500 (number, required)
+       
+       
++ Response 200 (application/json)
+
+        {  
+           "code":0,
+           "message":"OK",
+           "qrItems":[  
+              {  
+                 "id":445395,
+                 "type":"1",
+                 "clientId":"1148405574330228376",
+                 "data":{  
+                    "header":{  
+                       "codeId":445395,
+                       "merchantId":"1148405574330228376",
+                       "status":"PENDING",
+                       "type":"1",
+                       "price":1.0,
+                       "currency":"EUR",
+                       "stock":500,
+                       "itemId":"Apple",
+                       "expirationTime":"2017-12-19T10:55:28+01:00"
+                    },
+                    "attributes":{  
+                       "email":true,
+                       "phone":true,
+                       "customAttrs":[  
+        
+                       ]
+                    },
+                    "orderNotifications":[  
+        
+                    ],
+                    "name":"Apple",
+                    "link":"",
+                    "shortDescription":"Apple short",
+                    "longDescription":"Apple long",
+                    "imageUrl":"http://pngimg.com/upload_small/apple/apple_PNG12458.png",
+                    "quantity":10,
+                    "useCart":false,
+                    "delivery":false,
+                    "creationTime":"2017-03-07T11:00:15+01:00",
+                    "modifiedTime":"2017-03-07T11:00:15+01:00"
+                 },
+                 "status":0,
+                 "stock":500,
+                 "expirationTime":1513677328000
+              }
+           ]
+        }
+        
+        
+        
+## Read QR item data [/qr/get/{id}]
+
+### Read QR item data [GET]
+
+
++ Request
+
+    + Headers
+        
+            Authorization: Basic NzlmNjg5ODYtNmY2Yi00MGEwLTk4YjYtNDE3ZDMwMmRlYzg1LjIxMzEyMzEyLjE0NjIyNzE3NzE6ZmMzM2Y4OWYxYmFmY2UwMmQ5NzQ1Mjc5MzVjNmQ3NDA3NDdjNmRkYjQyMjM3MWJlZmFmZTk4YmJmMThjMGQyNg==
+    + Body
+
++ Response 200 (application/json)
+
+        {
+            "code":0,
+            "message":"OK",
+            "qrItems": [{
+                "id":650326,
+                "type":"1",
+                "clientId":"1148405574330228376",
+                "data": {
+                    "header": {
+                        "codeId":650326,
+                        "merchantId":"1148405574330228376",
+                        "status":"PENDING",
+                        "type":"1",
+                        "price":0.2,
+                        "currency":"EUR",
+                        "stock":6000,
+                        "itemId":"PENDING1",
+                        "expirationTime":"2017-04-24T16:30:53+02:00"
+                    },
+                    "attributes": {
+                        "email":false,
+                        "phone":false,
+                        "customAttrs":[]
+                    },
+                    "orderNotifications": [{
+                        "type":"EMAIL",
+                        "address":"nina.bartolj@halcom.si"
+                    }],
+                    "name":"Pending item",
+                    "link":"",
+                    "shortDescription":"Pending item short",
+                    "longDescription":"Pending item long",
+                    "imageUrl":"https://conceptdraw.com/a2789c3/p30/preview/640/pict--tag---yellow-glyph-icons---vector-stencils-library.png--diagram-flowchart-example.png",
+                    "quantity":1,
+                    "useCart":false,
+                    "delivery":false,
+                    "creationTime":"2017-01-24T16:31:37+01:00",
+                    "modifiedTime":"2017-01-24T16:31:38+01:00"
+                },
+                "status":0,
+                "stock":6000,
+                "expirationTime":1493044253000
+            }]
+        }
+        
+        
+
+
+## Read QR items list [/qr/get/items/{clientId}]
+
+### Read QR items list [GET]
+
+
++ Request
+
+    + Headers
+        
+            Authorization: Basic NzlmNjg5ODYtNmY2Yi00MGEwLTk4YjYtNDE3ZDMwMmRlYzg1LjIxMzEyMzEyLjE0NjIyNzE3NzE6ZmMzM2Y4OWYxYmFmY2UwMmQ5NzQ1Mjc5MzVjNmQ3NDA3NDdjNmRkYjQyMjM3MWJlZmFmZTk4YmJmMThjMGQyNg==
+    + Body
+
++ Response 200 (application/json)
+
+        {  
+           "code":0,
+           "message":"OK",
+           "qrItems":[  
+              {  
+                 "id":897201,
+                 "type":"1",
+                 "clientId":"1148405574330228376",
+                 "data":{  
+                    "header":{  
+                       "codeId":897201,
+                       "merchantId":"1148405574330228376",
+                       "status":"ACTIVE",
+                       "type":"1",
+                       "price":1.99,
+                       "currency":"EUR",
+                       "stock":200,
+                       "itemId":"6240",
+                       "expirationTime":"2017-03-30T12:00:00+02:00"
+                    },
+                    "attributes":{  
+                       "email":false,
+                       "phone":true,
+                       "customAttrs":[  
+                          "Barva"
+                       ]
+                    },
+                    "orderNotifications":[  
+                       {  
+                          "type":"EMAIL",
+                          "address":"cedo@shakemoon.com"
+                       }
+                    ],
+                    "name":"Darilna vrečka Star Wars",
+                    "link":"",
+                    "shortDescription":"",
+                    "longDescription":"Darilna vrečka z motivom priljubljenega filma Star wars. Na voljo dva različna motiva.",
+                    "imageUrl":"http://cdn1.kakadu.si/16903-large_default/darilna-vrecka-star-wars-445-33-10-.jpg",
+                    "quantity":1,
+                    "useCart":false,
+                    "delivery":true,
+                    "creationTime":"2017-01-10T14:52:06+01:00",
+                    "modifiedTime":"2017-02-07T09:57:33+01:00"
+                 },
+                 "status":1,
+                 "stock":200,
+                 "expirationTime":1490868000000
+              },
+              {  
+                 "id":897202,
+                 "type":"1",
+                 "clientId":"1148405574330228376",
+                 "data":{  
+                    "header":{  
+                       "codeId":897202,
+                       "merchantId":"1148405574330228376",
+                       "status":"ACTIVE",
+                       "type":"1",
+                       "price":11.99,
+                       "currency":"EUR",
+                       "stock":200,
+                       "itemId":"8122",
+                       "expirationTime":"2017-03-30T12:00:00+02:00"
+                    },
+                    "attributes":{  
+                       "email":false,
+                       "phone":false,
+                       "customAttrs":[  
+                          "članska izkaznica"
+                       ]
+                    },
+                    "orderNotifications":[  
+                       {  
+                          "type":"EMAIL",
+                          "address":"nina.bartolj@halcom.si"
+                       }
+                    ],
+                    "name":"Star wars dežnik moder",
+                    "link":"",
+                    "shortDescription":"kratek",
+                    "longDescription":"Darilna vrečka z motivom priljubljenega filma Star wars. Na voljo dva različna motiva.",
+                    "imageUrl":"http://cdn3.kakadu.si/22201-large_default/star-wars-deznik-moder.jpg",
+                    "quantity":1,
+                    "useCart":false,
+                    "delivery":true,
+                    "creationTime":"2017-01-10T14:52:06+01:00",
+                    "modifiedTime":"2017-01-20T12:01:01+01:00"
+                 },
+                 "status":1,
+                 "stock":200,
+                 "expirationTime":1490868000000
+              },
+              {  
+                 "id":390040,
+                 "type":"1",
+                 "clientId":"1148405574330228376",
+                 "data":{  
+                    "header":{  
+                       "codeId":390040,
+                       "merchantId":"1148405574330228376",
+                       "status":"ACTIVE",
+                       "type":"1",
+                       "price":29.41,
+                       "currency":"EUR",
+                       "stock":200,
+                       "itemId":"1138",
+                       "expirationTime":"2017-03-30T12:00:00+02:00"
+                    },
+                    "attributes":{  
+                       "email":false,
+                       "phone":false,
+                       "customAttrs":[  
+                          "membership id"
+                       ]
+                    },
+                    "orderNotifications":[  
+                       {  
+                          "type":"EMAIL",
+                          "address":"nina.bartolj@halcom.si"
+                       }
+                    ],
+                    "name":"MD pustni kostum Gasilec",
+                    "link":"",
+                    "shortDescription":"MD pustni kostum Gasilec",
+                    "longDescription":"Pustni kostum gasilec vključuje gasilski jopič, čelado, megafon z zvočnimi efekti, značko, gasilni aparat in kartonček za osebno ime. Odlično za igranje vlog ali pust.Primerno za otroke od 3. do 6. leta starosti (98 - 116 cm).Mere: 44,5 × 5.1 × 61 cm",
+                    "imageUrl":"http://cdn1.kakadu.si/1138-large_default/pustni-kostum-gasilec.jpg",
+                    "quantity":0,
+                    "useCart":false,
+                    "delivery":true,
+                    "creationTime":"2017-01-10T14:52:06+01:00",
+                    "modifiedTime":"2017-01-25T11:45:37+01:00"
+                 },
+                 "status":1,
+                 "stock":200,
+                 "expirationTime":1490868000000
+              },
+              {  
+                 "id":390041,
+                 "type":"1",
+                 "clientId":"1148405574330228376",
+                 "data":{  
+                    "header":{  
+                       "codeId":390041,
+                       "merchantId":"1148405574330228376",
+                       "status":"ACTIVE",
+                       "type":"1",
+                       "price":29.41,
+                       "currency":"EUR",
+                       "stock":200,
+                       "itemId":"1138",
+                       "expirationTime":"2017-03-30T12:00:00+02:00"
+                    },
+                    "attributes":{  
+                       "email":true,
+                       "phone":false,
+                       "customAttrs":[  
+                          "Barva"
+                       ]
+                    },
+                    "orderNotifications":[  
+                       {  
+                          "type":"EMAIL",
+                          "address":"ales.trcek@halcom.si"
+                       }
+                    ],
+                    "name":"MD pustni kostum Gasilec",
+                    "link":"",
+                    "shortDescription":"MD pustni kostum Gasilec",
+                    "longDescription":"Pustni kostum gasilec vključuje gasilski jopič, čelado, megafon z zvočnimi efekti, značko, gasilni aparat in kartonček za osebno ime. Odlično za igranje vlog ali pust.Primerno za otroke od 3. do 6. leta starosti (98 - 116 cm).Mere: 44,5 × 5.1 × 61 cm",
+                    "imageUrl":"http://cdn1.kakadu.si/1138-large_default/pustni-kostum-gasilec.jpg",
+                    "quantity":1,
+                    "useCart":false,
+                    "delivery":true,
+                    "creationTime":"2017-01-10T14:52:06+01:00",
+                    "modifiedTime":"2017-01-27T15:14:36+01:00"
+                 },
+                 "status":1,
+                 "stock":200,
+                 "expirationTime":1490868000000
+              },
+              {  
+                 "id":390043,
+                 "type":"1",
+                 "clientId":"1148405574330228376",
+                 "data":{  
+                    "header":{  
+                       "codeId":390043,
+                       "merchantId":"1148405574330228376",
+                       "status":"ACTIVE",
+                       "type":"1",
+                       "price":10.0,
+                       "currency":"EUR",
+                       "stock":100,
+                       "itemId":"11399",
+                       "expirationTime":"2017-03-30T12:00:00+02:00"
+                    },
+                    "attributes":{  
+                       "email":false,
+                       "phone":true,
+                       "customAttrs":[  
+                          "Ime naročnika"
+                       ]
+                    },
+                    "orderNotifications":[  
+                       {  
+                          "type":"EMAIL",
+                          "address":"nina.bartolj@halcom.si"
+                       }
+                    ],
+                    "name":"Članirana",
+                    "link":"",
+                    "shortDescription":"",
+                    "longDescription":"Pustni kostum gasilec vključuje gasilski jopič, čelado, megafon z zvočnimi efekti, značko, gasilni aparat in kartonček za osebno ime. Odlično za igranje vlog ali pust.Primerno za otroke od 3. do 6. leta starosti (98 - 116 cm).Mere: 44,5 × 5.1 × 61 cm",
+                    "imageUrl":"http://cdn1.kakadu.si/1138-large_default/pustni-kostum-gasilec.jpg",
+                    "quantity":1,
+                    "useCart":false,
+                    "delivery":false,
+                    "creationTime":"2017-01-10T14:52:06+01:00",
+                    "modifiedTime":"2017-01-18T21:03:07+01:00"
+                 },
+                 "status":1,
+                 "stock":100,
+                 "expirationTime":1490868000000
+              },
+              {  
+                 "id":722695,
+                 "type":"1",
+                 "clientId":"1148405574330228376",
+                 "data":{  
+                    "header":{  
+                       "codeId":722695,
+                       "merchantId":"1148405574330228376",
+                       "status":"ACTIVE",
+                       "type":"1",
+                       "price":50.0,
+                       "currency":"EUR",
+                       "stock":50,
+                       "itemId":"14548485",
+                       "expirationTime":"2017-06-01T13:00:00+02:00"
+                    },
+                    "attributes":{  
+                       "email":false,
+                       "phone":false,
+                       "customAttrs":[  
+        
+                       ]
+                    },
+                    "orderNotifications":[  
+                       {  
+                          "type":"EMAIL",
+                          "address":"biseramilosheska@gmail.com"
+                       }
+                    ],
+                    "name":"Test",
+                    "link":"",
+                    "shortDescription":"Test",
+                    "longDescription":"Test",
+                    "imageUrl":"",
+                    "quantity":1,
+                    "useCart":true,
+                    "delivery":true,
+                    "creationTime":"2017-01-17T17:54:05+01:00",
+                    "modifiedTime":"2017-01-25T15:39:59+01:00"
+                 },
+                 "status":1,
+                 "stock":50,
+                 "expirationTime":1496314800000
+              }
+           ]
+        }
+        
+        
+
+## Update QR item [/qr/modify]
+
+### Update QR item [POST]
+
+
++ Request (application/json)
+
+    + Headers
+        
+            Authorization: Basic NzlmNjg5ODYtNmY2Yi00MGEwLTk4YjYtNDE3ZDMwMmRlYzg1LjIxMzEyMzEyLjE0NjIyNzE3NzE6ZmMzM2Y4OWYxYmFmY2UwMmQ5NzQ1Mjc5MzVjNmQ3NDA3NDdjNmRkYjQyMjM3MWJlZmFmZTk4YmJmMThjMGQyNg==
+
+    + Attributes
+        + id: 650326 (number, required) - The unique identifier for a product
+        + data (object, required)
+            + header  (object, required)
+                + codeId: 650326 (number, required)              
+                + merchantId: 1148405574330228376 (string, required)
+                + status: 1 (number, required)
+                + price: 0.20 (string, required)
+                + stock: 6000 (number, required)
+                + itemId: PENDING1 (string, required)
+                + expirationTime: `2017-08-24T16:30:53+02:00` (string, required)
+            + attributes (required, object)
+                + email: true (boolean, required)  
+                + phone: false (boolean, required)  
+                + customAttrs (array, required)
+                    + (object)
+            + orderNotifications (array, required)
+                + (object)
+                    + type: EMAIL (string, required)
+                    + address: nina.bartolj@halcom.si (string, required)
+            + name: Pending item (string, required)
+            + link: '' (string, required)
+            + shortDescription: Pending item short (string, required)
+            + longDescription: Pending item long (string, required)
+            + imageUrl: `https://conceptdraw.com/a2789c3/p30/preview/640/pict--tag---yellow-glyph-icons---vector-stencils-library.png--diagram-flowchart-example.png` (string, required)
+            + quantity: 1 (number, required)
+            + useCart: false (boolean, required)  
+            + delivery: false (boolean, required)  
+            + creationTime: `2017-01-24T16:31:37+01:00` (string, required)
+            + modifiedTime: `2017-03-06T17:05:12+01:00` (string, required)
+       + expirationTime: `2017-08-24T16:30:53+02:00` (string, required)
+       + status: 1 (number, required)
+       + stock: 6000 (number, required)
+       
+
++ Response 200 (application/json)
+
+        {  
+           "code":0,
+           "message":"OK",
+           "qrItems":[  
+              {  
+                 "id":650326,
+                 "type":"1",
+                 "clientId":"null",
+                 "data":{  
+                    "header":{  
+                       "codeId":650326,
+                       "merchantId":"1148405574330228376",
+                       "status":"ACTIVE",
+                       "type":"1",
+                       "price":0.2,
+                       "currency":"EUR",
+                       "stock":6000,
+                       "itemId":"PENDING1",
+                       "expirationTime":"2017-08-24T16:30:53+02:00"
+                    },
+                    "attributes":{  
+                       "email":true,
+                       "phone":false,
+                       "customAttrs":[  
+        
+                       ]
+                    },
+                    "orderNotifications":[  
+                       {  
+                          "type":"EMAIL",
+                          "address":"nina.bartolj@halcom.si"
+                       }
+                    ],
+                    "name":"Pending item",
+                    "link":"",
+                    "shortDescription":"Pending item short",
+                    "longDescription":"Pending item long",
+                    "imageUrl":"https://conceptdraw.com/a2789c3/p30/preview/640/pict--tag---yellow-glyph-icons---vector-stencils-library.png--diagram-flowchart-example.png",
+                    "quantity":1,
+                    "useCart":false,
+                    "delivery":false,
+                    "creationTime":"2017-01-24T16:31:37+01:00",
+                    "modifiedTime":"2017-03-06T17:05:12+01:00"
+                 },
+                 "status":1,
+                 "stock":6000,
+                 "expirationTime":1503585053000
+              }
+           ]
+        }
+
+
+
+## Delete QR item [/qr/remove/{id}]
+
+### Delete QR item [PUT]
+
+
++ Request
+
+    + Headers
+        
+            Authorization: Basic NzlmNjg5ODYtNmY2Yi00MGEwLTk4YjYtNDE3ZDMwMmRlYzg1LjIxMzEyMzEyLjE0NjIyNzE3NzE6ZmMzM2Y4OWYxYmFmY2UwMmQ5NzQ1Mjc5MzVjNmQ3NDA3NDdjNmRkYjQyMjM3MWJlZmFmZTk4YmJmMThjMGQyNg==
+    + Body
+
++ Response 200 (application/json)
+
+        
+        {  
+           "code":0,
+           "message":"OK"
+        }
